@@ -60,7 +60,7 @@ export default function Sidebar() {
       </Button>
 
       {/* Sidebar - Desktop */}
-      <div className="hidden md:flex flex-col w-64 border-r bg-background">
+      <div className="hidden md:flex flex-col w-64 border-r bg-background fixed h-full">
         <div className="p-6">
           <h1 className="text-xl font-bold">Expense Tracker</h1>
         </div>
