@@ -50,10 +50,11 @@ export default function SubscriptionsPage() {
     fetchSubscriptions()
   }, [fetchSubscriptions])
 
-  const handleProcessSubscriptions = async () => {
+  const handleProcessSubscriptions = async (force = false) => {
     setProcessing(true);
     try {
-      const response = await fetch('/api/subscriptions/process', {
+      const url = force ? '/api/subscriptions/process?force=true' : '/api/subscriptions/process';
+      const response = await fetch(url, {
         method: 'POST',
       });
       const result = await response.json();
@@ -178,9 +179,14 @@ export default function SubscriptionsPage() {
             {loading ? "Loading..." : formatCurrency(totalMonthly)}
           </p>
         </div>
-        <Button onClick={handleProcessSubscriptions} disabled={processing}>
-          {processing ? 'Processing...' : 'Process Subscriptions'}
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={() => handleProcessSubscriptions(true)} disabled={processing}>
+            {processing ? 'Processing...' : 'Force Process'}
+          </Button>
+          <Button onClick={() => handleProcessSubscriptions(false)} disabled={processing}>
+            {processing ? 'Processing...' : 'Process Subscriptions'}
+          </Button>
+        </div>
       </div>
       
       <Tabs defaultValue="list" className="space-y-6">

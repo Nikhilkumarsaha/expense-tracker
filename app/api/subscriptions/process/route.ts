@@ -3,8 +3,11 @@ import clientPromise from "@/lib/db";
 import { Expense, Subscription } from "@/lib/types";
 import { ObjectId } from "mongodb";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get('force') === 'true';
+
     const client = await clientPromise;
     const db = client.db("expense-tracker");
     
@@ -24,7 +27,11 @@ export async function POST() {
 
       let shouldProcess = false;
 
-      if (!lastProcessed) {
+      if (force) {
+        if (today.getDate() >= dueDay) {
+          shouldProcess = true;
+        }
+      } else if (!lastProcessed) {
         // If never processed, check if due date has passed this month
         if (today.getDate() >= dueDay) {
           shouldProcess = true;
@@ -46,7 +53,7 @@ export async function POST() {
         const expense: Expense = {
           title: `Subscription: ${sub.title}`,
           amount: sub.amount,
-          date: new Date(currentYear, currentMonth, dueDay).toISOString().split('T')[0],
+          date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dueDay).padStart(2, '0')}`,
           category: sub.category,
           createdAt: new Date(),
         };
