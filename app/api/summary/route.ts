@@ -1,26 +1,40 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/db";
-import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
+    const year = searchParams.get('year');
     
-    if (!month) {
+    if (!month && !year) {
       return NextResponse.json(
-        { error: "Month parameter is required (YYYY-MM format)" },
+        { error: "Either year or month parameter is required (year: YYYY, month: YYYY-MM)" },
         { status: 400 }
       );
     }
-    
-    const startDate = startOfMonth(parseISO(`${month}-01`));
-    const endDate = endOfMonth(parseISO(`${month}-01`));
-    
+
+    let startDate: Date, endDate: Date, label: string;
+    if (month && month !== 'all') {
+      startDate = startOfMonth(parseISO(`${month}-01`));
+      endDate = endOfMonth(parseISO(`${month}-01`));
+      label = format(startDate, 'MMMM yyyy');
+    } else if (year) {
+      startDate = startOfYear(parseISO(`${year}-01-01`));
+      endDate = endOfYear(parseISO(`${year}-01-01`));
+      label = format(startDate, 'yyyy');
+    } else {
+      return NextResponse.json(
+        { error: "Invalid parameters" },
+        { status: 400 }
+      );
+    }
+
     const client = await clientPromise;
     const db = client.db("expense-tracker");
-    
-    // Get all expenses for the month
+
+    // Get all expenses for the period
     const expenses = await db
       .collection("expenses")
       .find({
@@ -30,8 +44,8 @@ export async function GET(request: Request) {
         }
       })
       .toArray();
-    
-    // Get all income for the month
+
+    // Get all income for the period
     const incomes = await db
       .collection("incomes")
       .find({
@@ -41,7 +55,7 @@ export async function GET(request: Request) {
         }
       })
       .toArray();
-    
+
     // Calculate totals by category
     const categoryTotals = expenses.reduce((acc, expense) => {
       const category = expense.category;
@@ -51,14 +65,14 @@ export async function GET(request: Request) {
       acc[category] += expense.amount;
       return acc;
     }, {} as Record<string, number>);
-    
+
     // Calculate total income and expenses
     const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
     const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
     const remainingBalance = totalIncome - totalExpenses;
-    
+
     return NextResponse.json({
-      month: format(startDate, 'MMMM yyyy'),
+      month: label,
       totalIncome,
       totalExpenses,
       remainingBalance,

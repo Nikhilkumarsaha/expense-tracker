@@ -4,14 +4,16 @@ import { useEffect, useState } from "react"
 import { MonthlySummaryCard } from "@/components/summary/MonthlySummaryCard"
 import { ExpenseDetails } from "@/components/summary/ExpenseDetails"
 import { Expense } from "@/lib/types"
-import { format } from "date-fns"
+import { format, getYear, format as formatDate, parseISO } from "date-fns"
 import { toast } from "@/hooks/use-toast"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function SummaryPage() {
+  const [selectedYear, setSelectedYear] = useState(format(new Date(), 'yyyy'))
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'))
+  const [availableYears, setAvailableYears] = useState<string[]>([])
   const [availableMonths, setAvailableMonths] = useState<string[]>([])
   const [summaryData, setSummaryData] = useState<{
     month: string;
@@ -33,32 +35,46 @@ export default function SummaryPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Generate last 12 months for the select dropdown
-    const months = []
+    // Generate last 5 years for the select dropdown
+    const years = []
     const today = new Date()
-    
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(today.getFullYear(), today.getMonth() - i, 1)
-      months.push(format(date, 'yyyy-MM'))
+    for (let i = 0; i < 5; i++) {
+      years.push(String(today.getFullYear() - i))
     }
-    
-    setAvailableMonths(months)
-    
+    setAvailableYears(years)
   }, [])
 
   useEffect(() => {
-    fetchSummaryData(selectedMonth)
-  }, [selectedMonth])
+    // Generate months for the selected year
+    const months = []
+    const year = parseInt(selectedYear)
+    const today = new Date()
+    const maxMonth = year === today.getFullYear() ? today.getMonth() : 11
+    for (let i = maxMonth; i >= 0; i--) {
+      const date = new Date(year, i, 1)
+      months.push(format(date, 'yyyy-MM'))
+    }
+    setAvailableMonths(months)
+    setSelectedMonth(months[0])
+  }, [selectedYear])
 
-  const fetchSummaryData = async (month: string) => {
+  useEffect(() => {
+    fetchSummaryData(selectedYear, selectedMonth)
+  }, [selectedYear, selectedMonth])
+
+  const fetchSummaryData = async (year: string, month: string) => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/summary?month=${month}`)
-      
+      let url = `/api/summary?year=${year}`
+      if (month && month !== 'all') {
+        url += `&month=${month}`
+      } else if (month === 'all') {
+        url += `&month=all`
+      }
+      const response = await fetch(url)
       if (!response.ok) {
         throw new Error('Failed to fetch summary data')
       }
-      
       const data = await response.json()
       setSummaryData(data)
     } catch (error) {
@@ -77,16 +93,28 @@ export default function SummaryPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Monthly Summary</h1>
         <p className="text-muted-foreground mt-1">
-          View your financial summary by month
+          View your financial summary by month or year
         </p>
       </div>
       
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center space-x-4">
-            <Label htmlFor="month-select" className="min-w-24">
-              Select Month:
-            </Label>
+            <Label htmlFor="year-select" className="min-w-20">Select Year:</Label>
+            <Select
+              value={selectedYear}
+              onValueChange={setSelectedYear}
+            >
+              <SelectTrigger id="year-select" className="w-full max-w-xs">
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableYears.map((year) => (
+                  <SelectItem key={year} value={year}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Label htmlFor="month-select" className="min-w-24">Select Month:</Label>
             <Select
               value={selectedMonth}
               onValueChange={setSelectedMonth}
@@ -95,6 +123,7 @@ export default function SummaryPage() {
                 <SelectValue placeholder="Select month" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All Months</SelectItem>
                 {availableMonths.map((month) => (
                   <SelectItem key={month} value={month}>
                     {format(new Date(`${month}-01`), 'MMMM yyyy')}
