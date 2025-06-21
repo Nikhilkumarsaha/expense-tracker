@@ -59,22 +59,23 @@ export function IncomeTable({ incomes, onDelete }: IncomeTableProps) {
     },
     {
       accessorKey: "date",
-      header: "Date",
-      cell: ({ row }) => format(parseISO(row.original.date), "MMM dd, yyyy"),
+      header: () => <div className="text-center">Date</div>,
+      cell: ({ row }) => <div className="text-center">{format(parseISO(row.original.date), "MMM dd, yyyy")}</div>,
     },
     {
       accessorKey: "amount",
-      header: "Amount",
+      header: () => <div className="text-center">Amount</div>,
       cell: ({ row }) => (
-        <div className="font-medium text-right">
+        <div className="font-medium text-center">
           {formatCurrency(row.original.amount)}
         </div>
       ),
     },
     {
       id: "actions",
+      header: () => <div className="text-center">Actions</div>,
       cell: ({ row }) => (
-        <div className="text-right">
+        <div className="flex justify-center">
           <Button
             variant="ghost"
             size="icon"

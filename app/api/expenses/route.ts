@@ -54,6 +54,47 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PUT(request: Request) {
+  try {
+    const expense: Expense = await request.json();
+    
+    if (!expense._id || !expense.title || !expense.amount || !expense.date || !expense.category) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+    
+    const { _id, ...expenseToUpdate } = expense;
+    
+    const client = await clientPromise;
+    const db = client.db("expense-tracker");
+    
+    const result = await db.collection("expenses").updateOne(
+      { _id: new ObjectId(_id) },
+      { $set: {
+          ...expenseToUpdate,
+          amount: Number(expenseToUpdate.amount),
+        } 
+      }
+    );
+    
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { error: "Expense not found" },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({ message: "Expense updated successfully" });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to update expense" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);

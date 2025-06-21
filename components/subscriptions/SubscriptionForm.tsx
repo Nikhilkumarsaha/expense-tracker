@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 
 const formSchema = z.object({
+  _id: z.string().optional(),
   title: z.string().min(2, { message: "Title is required" }),
   amount: z.string().refine((val) => {
     const num = parseFloat(val)
@@ -47,23 +48,26 @@ const formSchema = z.object({
 })
 
 interface SubscriptionFormProps {
-  onSubmit: (data: Omit<Subscription, "_id">) => Promise<void>
+  onSubmit: (data: Subscription) => Promise<void>,
+  subscription?: Subscription | null
 }
 
-export function SubscriptionForm({ onSubmit }: SubscriptionFormProps) {
+export function SubscriptionForm({ onSubmit, subscription }: SubscriptionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [titlesList, setTitlesList] = useState(SUBSCRIPTION_TITLES)
   const [customTitle, setCustomTitle] = useState("")
   const [showCustomTitleInput, setShowCustomTitleInput] = useState(false)
+  const isEditMode = !!subscription;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-      amount: "",
-      category: "",
-      date: 1,
-      isSubscribed: true,
+      _id: subscription?._id || "",
+      title: subscription?.title || "",
+      amount: subscription?.amount ? String(subscription.amount) : "",
+      category: subscription?.category || "",
+      date: subscription?.date || 1,
+      isSubscribed: subscription?.isSubscribed ?? true,
     },
   })
 
@@ -80,6 +84,7 @@ export function SubscriptionForm({ onSubmit }: SubscriptionFormProps) {
     setIsSubmitting(true)
     try {
       await onSubmit({
+        _id: subscription?._id || '',
         title: values.title,
         amount: parseFloat(values.amount),
         category: values.category,
@@ -87,22 +92,24 @@ export function SubscriptionForm({ onSubmit }: SubscriptionFormProps) {
         isSubscribed: values.isSubscribed,
       })
       
-      form.reset({
-        title: "",
-        amount: "",
-        category: "",
-        date: 1,
-        isSubscribed: true,
-      })
+      if (!isEditMode) {
+        form.reset({
+          title: "",
+          amount: "",
+          category: "",
+          date: 1,
+          isSubscribed: true,
+        })
+      }
       
       toast({
         title: "Success",
-        description: "Subscription has been added",
+        description: `Subscription has been ${isEditMode ? 'updated' : 'added'}.`,
       })
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to add subscription",
+        description: `Failed to ${isEditMode ? 'update' : 'add'} subscription.`,
         variant: "destructive",
       })
     } finally {
@@ -262,29 +269,31 @@ export function SubscriptionForm({ onSubmit }: SubscriptionFormProps) {
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="isSubscribed"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Active Subscription</FormLabel>
-                <FormDescription>
-                  Automatically add to expenses on the due date
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+        <div className="flex items-center justify-between pt-4">
+          <FormField
+            control={form.control}
+            name="isSubscribed"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>Enable Subscription</FormLabel>
+                  <FormDescription>
+                    Process this as an expense automatically each month.
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
         
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Adding..." : "Add Subscription"}
+          {isSubmitting ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update Subscription' : 'Add Subscription')}
         </Button>
       </form>
     </Form>

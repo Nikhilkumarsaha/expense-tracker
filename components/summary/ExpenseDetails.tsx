@@ -16,21 +16,23 @@ const columns: ColumnDef<Expense>[] = [
   },
   {
     accessorKey: "date",
-    header: "Date",
-    cell: ({ row }) => format(parseISO(row.original.date), "MMM dd, yyyy"),
+    header: () => <div className="text-center">Date</div>,
+    cell: ({ row }) => <div className="text-center">{format(parseISO(row.original.date), "MMM dd, yyyy")}</div>,
   },
   {
     accessorKey: "category",
-    header: "Category",
+    header: () => <div className="text-center">Category</div>,
     cell: ({ row }) => (
-      <Badge variant="outline">{row.original.category}</Badge>
+      <div className="text-center">
+        <Badge variant="outline">{row.original.category}</Badge>
+      </div>
     ),
   },
   {
     accessorKey: "amount",
-    header: "Amount",
+    header: () => <div className="text-center">Amount</div>,
     cell: ({ row }) => (
-      <div className="font-medium text-destructive text-right">
+      <div className="font-medium text-destructive text-center">
         {formatCurrency(row.original.amount)}
       </div>
     ),

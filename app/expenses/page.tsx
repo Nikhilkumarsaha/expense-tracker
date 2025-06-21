@@ -79,6 +79,26 @@ export default function ExpensesPage() {
     }
   }
 
+  const handleUpdateExpense = async (expense: Expense) => {
+    try {
+      const response = await fetch('/api/expenses', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(expense),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update expense')
+      }
+      
+      fetchData() // Refresh the list
+    } catch (error) {
+      throw error
+    }
+  }
+
   const handleDeleteExpense = async (id: string) => {
     try {
       const response = await fetch(`/api/expenses?id=${id}`, {
@@ -120,6 +140,7 @@ export default function ExpensesPage() {
               expenses={expenses} 
               remainingBalance={remainingBalance}
               onDelete={handleDeleteExpense} 
+              onUpdate={handleUpdateExpense}
             />
           )}
         </TabsContent>

@@ -100,6 +100,26 @@ export default function SubscriptionsPage() {
     }
   }
 
+  const handleUpdateSubscription = async (subscription: Subscription) => {
+    try {
+      const response = await fetch('/api/subscriptions', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(subscription),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update subscription');
+      }
+
+      fetchSubscriptions();
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const handleToggleSubscription = async (id: string, isSubscribed: boolean) => {
     try {
       const subscription = subscriptions.find(sub => sub._id === id)
@@ -179,6 +199,7 @@ export default function SubscriptionsPage() {
               subscriptions={subscriptions} 
               onToggle={handleToggleSubscription}
               onDelete={handleDeleteSubscription} 
+              onUpdate={handleUpdateSubscription}
             />
           )}
         </TabsContent>

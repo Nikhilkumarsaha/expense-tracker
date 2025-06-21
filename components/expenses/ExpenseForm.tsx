@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select"
 
 const formSchema = z.object({
+  _id: z.string().optional(),
   title: z.string().min(2, { message: "Title is required" }),
   amount: z.string().refine((val) => {
     const num = parseFloat(val)
@@ -41,19 +42,22 @@ const formSchema = z.object({
 })
 
 interface ExpenseFormProps {
-  onSubmit: (data: Expense) => Promise<void>
+  onSubmit: (data: Expense) => Promise<void>,
+  expense?: Expense | null,
 }
 
-export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
+export function ExpenseForm({ onSubmit, expense }: ExpenseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isEditMode = !!expense;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-      amount: "",
-      category: "",
-      date: new Date(),
+      _id: expense?._id || "",
+      title: expense?.title || "",
+      amount: expense?.amount ? String(expense.amount) : "",
+      category: expense?.category || "",
+      date: expense?.date ? new Date(expense.date) : new Date(),
     },
   })
 
@@ -61,27 +65,30 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
     setIsSubmitting(true)
     try {
       await onSubmit({
+        _id: expense?._id,
         title: values.title,
         amount: parseFloat(values.amount),
         category: values.category,
         date: format(values.date, "yyyy-MM-dd"),
       })
       
-      form.reset({
-        title: "",
-        amount: "",
-        category: "",
-        date: new Date(),
-      })
+      if (!isEditMode) {
+        form.reset({
+          title: "",
+          amount: "",
+          category: "",
+          date: new Date(),
+        })
+      }
       
       toast({
         title: "Success",
-        description: "Expense has been added",
+        description: `Expense has been ${isEditMode ? 'updated' : 'added'}`,
       })
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to add expense",
+        description: `Failed to ${isEditMode ? 'update' : 'add'} expense`,
         variant: "destructive",
       })
     } finally {
@@ -194,7 +201,7 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
         />
         
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Adding..." : "Add Expense"}
+          {isSubmitting ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Expense" : "Add Expense")}
         </Button>
       </form>
     </Form>

@@ -8,7 +8,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Trash2 } from "lucide-react"
+import { Trash2, Pencil } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,22 +19,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
+import { SubscriptionForm } from "./SubscriptionForm"
 
 interface SubscriptionTableProps {
   subscriptions: Subscription[]
   onToggle: (id: string, isSubscribed: boolean) => Promise<void>
   onDelete: (id: string) => Promise<void>
+  onUpdate: (subscription: Subscription) => Promise<void>
 }
 
 export function SubscriptionTable({ 
   subscriptions, 
   onToggle,
-  onDelete 
+  onDelete,
+  onUpdate
 }: SubscriptionTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isToggling, setIsToggling] = useState<string | null>(null)
+  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null)
 
   const handleDelete = async () => {
     if (!deleteId) return
@@ -79,6 +89,15 @@ export function SubscriptionTable({
     }
   }
 
+  const handleUpdate = async (subscription: Subscription) => {
+    try {
+      await onUpdate(subscription);
+      setEditingSubscription(null);
+    } catch (error) {
+      // Error is handled in the form
+    }
+  }
+
   const columns: ColumnDef<Subscription>[] = [
     {
       accessorKey: "title",
@@ -87,30 +106,32 @@ export function SubscriptionTable({
     },
     {
       accessorKey: "category",
-      header: "Category",
+      header: () => <div className="text-center">Category</div>,
       cell: ({ row }) => (
-        <Badge variant="outline">{row.original.category}</Badge>
+        <div className="text-center">
+          <Badge variant="outline">{row.original.category}</Badge>
+        </div>
       ),
     },
     {
       accessorKey: "amount",
-      header: "Amount",
+      header: () => <div className="text-center">Amount</div>,
       cell: ({ row }) => (
-        <div className="font-medium text-right">
+        <div className="font-medium text-center">
           {formatCurrency(row.original.amount)}
         </div>
       ),
     },
     {
       accessorKey: "date",
-      header: "Due Date",
-      cell: ({ row }) => `${row.original.date}${getOrdinalSuffix(row.original.date)} of each month`,
+      header: () => <div className="text-center">Due Date</div>,
+      cell: ({ row }) => <div className="text-center">{`${row.original.date}${getOrdinalSuffix(row.original.date)} of each month`}</div>,
     },
     {
       accessorKey: "isSubscribed",
-      header: "Status",
+      header: () => <div className="text-center">Status</div>,
       cell: ({ row }) => (
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-center">
           <Switch
             checked={row.original.isSubscribed}
             onCheckedChange={(checked) => 
@@ -123,14 +144,22 @@ export function SubscriptionTable({
     },
     {
       id: "actions",
+      header: () => <div className="text-center">Actions</div>,
       cell: ({ row }) => (
-        <div className="text-right">
+        <div className="flex justify-center space-x-2">
+           <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setEditingSubscription(row.original)}
+          >
+            <Pencil className="h-4 w-4 text-yellow-700 hover:text-yellow-500" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setDeleteId(row.original._id || "")}
           >
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Trash2 className="h-4 w-4 text-destructive hover:text-red-600" />
           </Button>
         </div>
       ),
@@ -176,6 +205,15 @@ export function SubscriptionTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!editingSubscription} onOpenChange={(open) => !open && setEditingSubscription(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Subscription</DialogTitle>
+          </DialogHeader>
+          <SubscriptionForm onSubmit={handleUpdate} subscription={editingSubscription} />
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

@@ -7,7 +7,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { format, parseISO } from "date-fns"
-import { Trash2 } from "lucide-react"
+import { Trash2, Pencil } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   AlertDialog,
@@ -19,21 +19,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
+import { ExpenseForm } from "./ExpenseForm"
 
 interface ExpenseTableProps {
   expenses: Expense[]
   remainingBalance: number
   onDelete: (id: string) => Promise<void>
+  onUpdate: (expense: Expense) => Promise<void>
 }
 
 export function ExpenseTable({ 
   expenses, 
   remainingBalance,
-  onDelete 
+  onDelete,
+  onUpdate
 }: ExpenseTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
 
   const handleDelete = async () => {
     if (!deleteId) return
@@ -57,6 +68,15 @@ export function ExpenseTable({
     }
   }
 
+  const handleUpdate = async (expense: Expense) => {
+    try {
+      await onUpdate(expense);
+      setEditingExpense(null);
+    } catch (error) {
+      // Toast is handled in the form
+    }
+  }
+
   const columns: ColumnDef<Expense>[] = [
     {
       accessorKey: "title",
@@ -65,35 +85,45 @@ export function ExpenseTable({
     },
     {
       accessorKey: "date",
-      header: "Date",
-      cell: ({ row }) => format(parseISO(row.original.date), "MMM dd, yyyy"),
+      header: () => <div className="text-center">Date</div>,
+      cell: ({ row }) => <div className="text-center">{format(parseISO(row.original.date), "MMM dd, yyyy")}</div>,
     },
     {
       accessorKey: "category",
-      header: "Category",
+      header: () => <div className="text-center">Category</div>,
       cell: ({ row }) => (
-        <Badge variant="outline">{row.original.category}</Badge>
+        <div className="text-center">
+          <Badge variant="outline">{row.original.category}</Badge>
+        </div>
       ),
     },
     {
       accessorKey: "amount",
-      header: "Amount",
+      header: () => <div className="text-center">Amount</div>,
       cell: ({ row }) => (
-        <div className="font-medium text-destructive text-right">
+        <div className="font-medium text-destructive text-center">
           {formatCurrency(row.original.amount)}
         </div>
       ),
     },
     {
       id: "actions",
+      header: () => <div className="text-center">Actions</div>,
       cell: ({ row }) => (
-        <div className="text-right">
+        <div className="flex justify-center space-x-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setEditingExpense(row.original)}
+          >
+            <Pencil className="h-4 w-4 text-yellow-700 hover:text-yellow-500" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setDeleteId(row.original._id || "")}
           >
-            <Trash2 className="h-4 w-4 text-destructive" />
+            <Trash2 className="h-4 w-4 text-destructive hover:text-red-600" />
           </Button>
         </div>
       ),
@@ -136,6 +166,15 @@ export function ExpenseTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!editingExpense} onOpenChange={(open) => !open && setEditingExpense(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Expense</DialogTitle>
+          </DialogHeader>
+          <ExpenseForm onSubmit={handleUpdate} expense={editingExpense} />
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

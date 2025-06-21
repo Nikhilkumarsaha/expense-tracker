@@ -6,7 +6,7 @@ import { CategoryTotal } from "@/lib/types"
 import { 
   ArrowDown,
   ArrowUp,
-  DollarSign 
+  IndianRupee
 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 
@@ -68,7 +68,7 @@ export function MonthlySummaryCard({
           </div>
           
           <div className="p-4 rounded-lg bg-muted flex flex-col items-center justify-center">
-            <DollarSign className="h-5 w-5 text-blue-500 mb-1" />
+            <IndianRupee className="h-5 w-5 text-blue-500 mb-1" />
             <span className="text-sm text-muted-foreground">Balance</span>
             <span className={`text-xl font-bold ${remainingBalance < 0 ? 'text-destructive' : 'text-green-500'}`}>
               {loading ? (

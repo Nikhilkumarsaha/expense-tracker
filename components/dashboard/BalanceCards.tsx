@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowDown, ArrowUp, DollarSign } from "lucide-react"
+import { ArrowDown, ArrowUp, IndianRupee } from "lucide-react"
 import { StatsCard } from "./StatsCard"
 import { formatCurrency } from "@/lib/utils"
 
@@ -22,7 +22,7 @@ export function BalanceCards({
       <StatsCard
         title="Current Balance"
         value={formatCurrency(remainingBalance)}
-        icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+        icon={<IndianRupee className="h-4 w-4 text-muted-foreground" />}
         description="Total remaining balance"
         loading={loading}
       />
