@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/db";
 import { Expense } from "@/lib/types";
 
@@ -33,8 +34,10 @@ export async function POST(request: Request) {
     const client = await clientPromise;
     const db = client.db("expense-tracker");
     
+    const { _id, ...expenseToInsert } = expense;
+
     const result = await db.collection("expenses").insertOne({
-      ...expense,
+      ...expenseToInsert,
       amount: Number(expense.amount),
       createdAt: new Date(),
     });
@@ -67,7 +70,7 @@ export async function DELETE(request: Request) {
     const db = client.db("expense-tracker");
     
     const result = await db.collection("expenses").deleteOne({
-      _id: id
+      _id: new ObjectId(id)
     });
     
     if (result.deletedCount === 0) {

@@ -41,8 +41,10 @@ export async function POST(request: Request) {
     const client = await clientPromise;
     const db = client.db("expense-tracker");
     
+    const { _id, ...incomeToInsert } = income;
+
     const result = await db.collection("incomes").insertOne({
-      ...income,
+      ...incomeToInsert,
       amount: Number(income.amount),
       createdAt: new Date(),
     });

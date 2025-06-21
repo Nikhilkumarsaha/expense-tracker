@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       }
       acc[category] += expense.amount;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
     
     // Calculate total income and expenses
     const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);

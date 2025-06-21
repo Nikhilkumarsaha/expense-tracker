@@ -51,7 +51,8 @@ export async function POST() {
           createdAt: new Date(),
         };
         
-        await db.collection("expenses").insertOne(expense);
+        const { _id, ...expenseToInsert } = expense;
+        await db.collection("expenses").insertOne(expenseToInsert);
         
         // Update the subscription's lastProcessedDate
         await db.collection("subscriptions").updateOne(
